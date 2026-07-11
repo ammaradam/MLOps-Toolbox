@@ -1,0 +1,85 @@
+<svg width="900" height="300" viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <style>
+    .card { fill: #ffffff; stroke: #e2e8f0; stroke-width: 1.5; }
+    .bar { fill: #f8fafc; }
+    .rule { stroke: #e2e8f0; stroke-width: 1; }
+    .title { fill: #0f172a; font-size: 13px; font-weight: 600; }
+    .head { fill: #94a3b8; font-size: 9px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+    .cell { fill: #334155; font-size: 11px; }
+    .muted { fill: #94a3b8; font-size: 10px; }
+    .link { fill: #2a78d6; font-size: 11px; }
+    .pill { fill: #ecfdf3; stroke: #86efac; stroke-width: 1; }
+    .pilltext { fill: #0ca30c; font-size: 9px; font-weight: 600; }
+    .spark { stroke: #2a78d6; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .tile { fill: #f8fafc; stroke: #e2e8f0; stroke-width: 1; }
+    .caption { fill: #94a3b8; font-size: 11px; }
+    @media (prefers-color-scheme: dark) {
+      .card { fill: #14161a; stroke: #2c303a; }
+      .bar { fill: #1c1f25; }
+      .rule { stroke: #2c303a; }
+      .title { fill: #e7e9ee; }
+      .head { fill: #5b6270; }
+      .cell { fill: #c7ccd6; }
+      .muted { fill: #5b6270; }
+      .link { fill: #3987e5; }
+      .pill { fill: #052e14; stroke: #0ca30c; }
+      .pilltext { fill: #4ade80; }
+      .spark { stroke: #3987e5; }
+      .tile { fill: #1c1f25; stroke: #2c303a; }
+      .caption { fill: #5b6270; }
+    }
+  </style>
+
+  <!-- left: project list -->
+  <rect class="card" x="10" y="10" width="420" height="260" rx="8" />
+  <rect class="bar" x="10" y="10" width="420" height="34" rx="8" />
+  <text class="title" x="24" y="32">Projects</text>
+
+  <text class="head" x="24"  y="62">name</text>
+  <text class="head" x="180" y="62">tracking uri</text>
+  <text class="head" x="330" y="62">registered</text>
+  <line class="rule" x1="24" y1="70" x2="416" y2="70" />
+
+  <text class="link" x="24"  y="92">churn-model</text>
+  <text class="cell" x="180" y="92">sqlite:///mlflow.db</text>
+  <text class="cell" x="330" y="92">2026-07-11</text>
+  <line class="rule" x1="24" y1="102" x2="416" y2="102" />
+
+  <text class="link" x="24"  y="124">fraud-detector</text>
+  <text class="cell" x="180" y="124">sqlite:///fraud.db</text>
+  <text class="cell" x="330" y="124">2026-07-10</text>
+  <line class="rule" x1="24" y1="134" x2="416" y2="134" />
+
+  <text class="muted" x="24" y="156">+ N more registered projects</text>
+
+  <!-- right: project detail -->
+  <rect class="card" x="470" y="10" width="420" height="260" rx="8" />
+  <rect class="bar" x="470" y="10" width="420" height="34" rx="8" />
+  <text class="title" x="484" y="32">churn-model</text>
+
+  <!-- stat tile with sparkline -->
+  <rect class="tile" x="484" y="52" width="150" height="58" rx="6" />
+  <text class="head" x="494" y="68">accuracy</text>
+  <text class="title" x="494" y="86">0.91</text>
+  <polyline class="spark" points="494,102 520,96 546,100 572,90 598,92 620,84" />
+
+  <text class="head" x="484" y="132">runs</text>
+  <line class="rule" x1="484" y1="140" x2="876" y2="140" />
+  <text class="cell" x="484" y="158">run-2</text>
+  <rect class="pill" x="560" y="148" width="58" height="16" rx="8" />
+  <text class="pilltext" x="589" y="159" text-anchor="middle">FINISHED</text>
+  <text class="cell" x="640" y="158">accuracy=0.91</text>
+  <line class="rule" x1="484" y1="168" x2="876" y2="168" />
+  <text class="cell" x="484" y="186">run-1</text>
+  <rect class="pill" x="560" y="176" width="58" height="16" rx="8" />
+  <text class="pilltext" x="589" y="187" text-anchor="middle">FINISHED</text>
+  <text class="cell" x="640" y="186">accuracy=0.84</text>
+
+  <text class="head" x="484" y="214">registered models</text>
+  <line class="rule" x1="484" y1="222" x2="876" y2="222" />
+  <text class="cell" x="484" y="240">churn-model v3</text>
+  <rect class="pill" x="620" y="230" width="70" height="16" rx="8" />
+  <text class="pilltext" x="655" y="241" text-anchor="middle">PRODUCTION</text>
+
+  <text class="caption" x="450" y="292" text-anchor="middle">wireframe — actual dashboard is server-rendered HTML, not this SVG</text>
+</svg>

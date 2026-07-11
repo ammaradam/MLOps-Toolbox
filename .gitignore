@@ -1,3 +1,9 @@
+# Local tracking store / artifacts (created by running the quickstart example)
+mlops.db
+mlflow.db
+mlruns/
+mlartifacts/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
