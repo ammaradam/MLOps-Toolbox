@@ -2,7 +2,9 @@
 
 All commands share two options where a model is involved:
 
-- `--tracking-uri` — the tracking store (default `sqlite:///mlops.db`)
+- `--tracking-uri` — the tracking store. When omitted it resolves through
+  settings: `MT_TRACKING_URI` env var, then the nearest `mlops.toml`, then
+  the local default `sqlite:///mlops.db`. See [`mt config`](#mt-config).
 - `--version` — a version number, `latest` (default), or an alias like `production`
 
 Commands designed for automation use exit codes: `0` success / all checks
@@ -11,8 +13,9 @@ pass, `1` failure — so they drop straight into CI and cron.
 ## `mt init NAME`
 
 Scaffold a new project: `train.py` (contract-registered training),
-`requirements.txt`, README, `.gitignore`, and a GitHub Actions workflow that
-trains, gates, and audits on every PR.
+`mlops.toml` (settings — tracking URI, cloud targets), `requirements.txt`,
+README, `.gitignore`, and a GitHub Actions workflow that trains, gates, and
+audits on every PR.
 
 ```bash
 mt init my-model [--dir path] [--force]
@@ -100,7 +103,7 @@ coverage.
 mt models [--tracking-uri URI]
 ```
 
-## `mt register NAME` / `mt unregister NAME`
+## `mt register NAME` / `mt edit NAME` / `mt unregister NAME`
 
 Manage project registrations (name → tracking URI) used by the dashboard,
 `mt doctor`, and `mt models`.
@@ -108,6 +111,7 @@ Manage project registrations (name → tracking URI) used by the dashboard,
 ```bash
 mt register churn --tracking-uri sqlite:///mlops.db \
   --description "Customer churn" --tag team=growth [--overwrite] [--yes]
+mt edit churn --name churn-v2 --description "New description"
 mt unregister churn [--yes]
 ```
 
@@ -126,8 +130,25 @@ List locally registered projects (name, tracking URI, description, tags).
 
 ## `mt dashboard`
 
-Run the read-only multi-project dashboard over every registered project.
+Run the multi-project dashboard over every registered project. Tracking
+stores are only ever read; project registrations can be renamed, described,
+or removed (with confirmation) from each project's settings panel.
 
 ```bash
 mt dashboard [--host 127.0.0.1] [--port 8050]
 ```
+
+## `mt config`
+
+Show every resolved setting and where its value came from — `[env]` for an
+`MT_*` environment variable, `[file]` for the nearest `mlops.toml`, or
+`[default]`. Settings never contain secrets: cloud credentials come from each
+provider's default chain, API keys from environment variables only.
+
+```bash
+mt config
+```
+
+Resolution order everywhere: CLI flags > `MT_*` env vars (nested fields via
+`__`, e.g. `MT_AWS__REGION`) > `mlops.toml` (searched upward from the working
+directory, like git config) > built-in defaults.

@@ -4,7 +4,7 @@ from typing import Annotated
 
 import typer
 
-from mlops_toolbox.cli._options import DEFAULT_TRACKING_URI, TrackingUri
+from mlops_toolbox.cli._options import TrackingUri, resolve_tracking_uri
 
 
 def models(
@@ -12,13 +12,17 @@ def models(
         str | None,
         typer.Argument(help="Registered project name to list models for (see mt projects)."),
     ] = None,
-    tracking_uri: TrackingUri = DEFAULT_TRACKING_URI,
+    tracking_uri: TrackingUri = None,
 ) -> None:
     """List registered models in a tracking store: version, aliases, contract coverage."""
     from mlops_toolbox.dashboard.data_access import list_registered_models
     from mlops_toolbox.projects import get_project
 
-    uri = get_project(project).tracking_uri if project is not None else tracking_uri
+    uri = (
+        get_project(project).tracking_uri
+        if project is not None
+        else resolve_tracking_uri(tracking_uri)
+    )
     infos = list_registered_models(uri)
     if not infos:
         typer.echo(f"No registered models in '{uri}'.")

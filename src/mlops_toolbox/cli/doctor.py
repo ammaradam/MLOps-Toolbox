@@ -4,7 +4,7 @@ from typing import Annotated
 
 import typer
 
-from mlops_toolbox.cli._options import DEFAULT_TRACKING_URI
+from mlops_toolbox.cli._options import resolve_tracking_uri
 
 
 def doctor(
@@ -31,7 +31,7 @@ def doctor(
             typer.echo(str(exc), err=True)
             raise typer.Exit(code=1) from exc
     else:
-        uri = tracking_uri or DEFAULT_TRACKING_URI
+        uri = resolve_tracking_uri(tracking_uri)
 
     health = audit_project(uri)
     typer.echo(f"Auditing {uri}")

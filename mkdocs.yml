@@ -44,6 +44,7 @@ nav:
   - Guides:
       - For software engineers: guides/software-engineers.md
       - For data scientists: guides/data-scientists.md
+      - Team setup (shared stores): guides/team-setup.md
   - Reference:
       - CLI: reference/cli.md
       - Python API: reference/python-api.md

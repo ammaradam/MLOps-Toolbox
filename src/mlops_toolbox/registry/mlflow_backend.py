@@ -45,21 +45,33 @@ class MLflowModelRegistry(ModelRegistry):
     Everywhere a `version` is accepted it may be a version number ("3"),
     "latest", or a registered-model alias like "production" — aliases are
     MLflow 3's replacement for the removed stage mechanism.
+
+    `registry_uri` registers models on a different MLflow server than the
+    tracking store — useful when tracking lands somewhere whose registry shim
+    is limited (e.g. Azure ML's, which lacks aliases).
     """
 
     def __init__(
-        self, tracking_uri: str = "sqlite:///mlops.db", experiment_name: str = "Default"
+        self,
+        tracking_uri: str = "sqlite:///mlops.db",
+        experiment_name: str = "Default",
+        registry_uri: str | None = None,
     ) -> None:
         self._mlflow = import_optional_dependency("mlflow", extra="registry")
         self._mlflow.set_tracking_uri(tracking_uri)
+        if registry_uri is not None:
+            self._mlflow.set_registry_uri(registry_uri)
         self.tracking_uri = tracking_uri
+        self.registry_uri = registry_uri
         # Use the object-oriented MlflowClient (bound to this tracking_uri) rather than
         # mlflow's fluent API for experiment resolution: the fluent API tracks the active
         # experiment as module-level global state, which leaks across MLflowTracker /
         # MLflowModelRegistry instances pointed at different tracking URIs within the same
         # process. We resolve an experiment_id up front and pass it explicitly to every
         # start_run() call instead of relying on ambient fluent state.
-        self._client = self._mlflow.tracking.MlflowClient(tracking_uri=tracking_uri)
+        self._client = self._mlflow.tracking.MlflowClient(
+            tracking_uri=tracking_uri, registry_uri=registry_uri
+        )
         self._default_experiment_id = self._get_or_create_experiment_id(experiment_name)
 
     def _get_or_create_experiment_id(self, name: str) -> str:
@@ -228,7 +240,14 @@ class MLflowModelRegistry(ModelRegistry):
 
     def set_alias(self, name: str, version: str, alias: str) -> ModelInfo:
         """Point an alias (e.g. "production") at a version — MLflow 3's stage replacement."""
-        self._client.set_registered_model_alias(name, alias, version)
+        try:
+            self._client.set_registered_model_alias(name, alias, version)
+        except Exception as exc:
+            raise RegistryError(
+                f"Failed to set alias {alias!r} on model '{name}' version {version}: {exc}. "
+                "If this registry does not support model aliases (e.g. the Azure ML MLflow "
+                "shim), point `registry_uri` at an alias-capable MLflow server instead."
+            ) from exc
         return self._to_model_info(self._client.get_model_version(name, version))
 
     def list_versions(self, name: str) -> list[ModelInfo]:

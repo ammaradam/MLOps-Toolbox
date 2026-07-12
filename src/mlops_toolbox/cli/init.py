@@ -33,6 +33,7 @@ def init(
 
     files = {
         "train.py": templates.INIT_TRAIN_PY,
+        "mlops.toml": templates.INIT_MLOPS_TOML,
         "requirements.txt": templates.INIT_REQUIREMENTS,
         "README.md": templates.INIT_README,
         ".gitignore": templates.INIT_GITIGNORE,

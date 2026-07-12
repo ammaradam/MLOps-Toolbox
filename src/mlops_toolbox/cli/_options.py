@@ -7,7 +7,12 @@ from typing import Annotated
 import typer
 
 TrackingUri = Annotated[
-    str, typer.Option("--tracking-uri", help="Tracking store URI.", show_default=True)
+    str | None,
+    typer.Option(
+        "--tracking-uri",
+        help="Tracking store URI (default: mlops.toml / MT_TRACKING_URI, else sqlite:///mlops.db).",
+        show_default=False,
+    ),
 ]
 ModelVersion = Annotated[
     str,
@@ -19,7 +24,14 @@ AssumeYes = Annotated[
     bool, typer.Option("--yes", "-y", help="Skip confirmation prompts (for scripts/CI).")
 ]
 
-DEFAULT_TRACKING_URI = "sqlite:///mlops.db"
+
+def resolve_tracking_uri(tracking_uri: str | None) -> str:
+    """Resolve an omitted --tracking-uri through settings (env > mlops.toml > default)."""
+    if tracking_uri is not None:
+        return tracking_uri
+    from mlops_toolbox.settings import load_settings
+
+    return load_settings().tracking_uri
 
 
 def confirm_or_abort(message: str, assume_yes: bool) -> None:

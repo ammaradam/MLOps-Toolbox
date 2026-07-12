@@ -6,7 +6,7 @@ from typing import Annotated
 import typer
 
 from mlops_toolbox.cli._io import read_frame
-from mlops_toolbox.cli._options import DEFAULT_TRACKING_URI, ModelVersion, TrackingUri
+from mlops_toolbox.cli._options import ModelVersion, TrackingUri
 
 
 def drift(
@@ -15,7 +15,7 @@ def drift(
         Path, typer.Option("--input", help="Current data to check (.parquet or .csv).")
     ],
     version: ModelVersion = "latest",
-    tracking_uri: TrackingUri = DEFAULT_TRACKING_URI,
+    tracking_uri: TrackingUri = None,
     predictions: Annotated[
         bool,
         typer.Option(

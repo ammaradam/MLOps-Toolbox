@@ -5,7 +5,13 @@ import json
 import pytest
 
 from mlops_toolbox.core.exceptions import ProjectAlreadyRegisteredError, ProjectNotFoundError
-from mlops_toolbox.projects import get_project, list_projects, register_project, unregister_project
+from mlops_toolbox.projects import (
+    get_project,
+    list_projects,
+    register_project,
+    unregister_project,
+    update_project,
+)
 
 
 def test_register_list_get_round_trip(tmp_path) -> None:
@@ -56,6 +62,43 @@ def test_unregister_removes_project(tmp_path) -> None:
     register_project("a", "sqlite:///a.db", registry_path=registry_path)
     unregister_project("a", registry_path=registry_path)
     assert list_projects(registry_path=registry_path) == []
+
+
+def test_update_project_renames_and_keeps_other_fields(tmp_path) -> None:
+    registry_path = tmp_path / "projects.json"
+    register_project(
+        "old-name",
+        "sqlite:///a.db",
+        description="original",
+        tags={"team": "x"},
+        registry_path=registry_path,
+    )
+
+    updated = update_project("old-name", new_name="new-name", registry_path=registry_path)
+    assert updated.name == "new-name"
+    assert updated.description == "original"
+    assert updated.tags == {"team": "x"}
+    assert [p.name for p in list_projects(registry_path=registry_path)] == ["new-name"]
+    with pytest.raises(ProjectNotFoundError):
+        get_project("old-name", registry_path=registry_path)
+
+
+def test_update_project_description_only(tmp_path) -> None:
+    registry_path = tmp_path / "projects.json"
+    register_project("a", "sqlite:///a.db", description="before", registry_path=registry_path)
+    updated = update_project("a", description="after", registry_path=registry_path)
+    assert updated.name == "a"
+    assert updated.description == "after"
+
+
+def test_update_project_rejects_rename_collision_and_missing(tmp_path) -> None:
+    registry_path = tmp_path / "projects.json"
+    register_project("a", "sqlite:///a.db", registry_path=registry_path)
+    register_project("b", "sqlite:///b.db", registry_path=registry_path)
+    with pytest.raises(ProjectAlreadyRegisteredError):
+        update_project("a", new_name="b", registry_path=registry_path)
+    with pytest.raises(ProjectNotFoundError):
+        update_project("missing", new_name="c", registry_path=registry_path)
 
 
 def test_list_projects_on_missing_file_returns_empty(tmp_path) -> None:

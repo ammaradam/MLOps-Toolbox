@@ -57,9 +57,16 @@ from mlops_toolbox.factories import (
 )
 from mlops_toolbox.monitoring import check_drift, check_prediction_drift
 from mlops_toolbox.monitoring.base import DriftDetector
-from mlops_toolbox.projects import get_project, list_projects, register_project, unregister_project
+from mlops_toolbox.projects import (
+    get_project,
+    list_projects,
+    register_project,
+    unregister_project,
+    update_project,
+)
 from mlops_toolbox.registry.base import ModelRegistry
 from mlops_toolbox.scoring import score_dataframe
+from mlops_toolbox.settings import ToolboxSettings, find_config_file, load_settings
 from mlops_toolbox.tracking.base import ExperimentTracker
 
 __version__ = "0.1.0"
@@ -101,6 +108,10 @@ __all__ = [
     "drift_detector",
     "model_server",
     "DEFAULT_TRACKING_URI",
+    # settings (mlops.toml / MT_* env vars)
+    "load_settings",
+    "ToolboxSettings",
+    "find_config_file",
     # core data contracts
     "RunResult",
     "ModelInfo",
@@ -163,6 +174,7 @@ __all__ = [
     "register_project",
     "list_projects",
     "get_project",
+    "update_project",
     "unregister_project",
     # dashboard
     "run_dashboard",

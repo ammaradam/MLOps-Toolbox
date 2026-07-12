@@ -4,7 +4,7 @@ from typing import Annotated
 
 import typer
 
-from mlops_toolbox.cli._options import DEFAULT_TRACKING_URI, ModelVersion, TrackingUri
+from mlops_toolbox.cli._options import ModelVersion, TrackingUri, resolve_tracking_uri
 
 
 def _resolve_metrics(
@@ -53,7 +53,7 @@ def gate(
         str | None, typer.Option("--model", help="Gate the source run of this registered model.")
     ] = None,
     version: ModelVersion = "latest",
-    tracking_uri: TrackingUri = DEFAULT_TRACKING_URI,
+    tracking_uri: TrackingUri = None,
 ) -> None:
     """Check metric gates against an MLflow run; exits 1 when any gate fails (CI-friendly)."""
     from mlops_toolbox.evaluation.gates import check_gates
@@ -61,7 +61,7 @@ def gate(
     if run_id is not None and model is not None:
         raise typer.BadParameter("Pass either --run or --model, not both.")
 
-    source, metrics = _resolve_metrics(tracking_uri, run_id, model, version)
+    source, metrics = _resolve_metrics(resolve_tracking_uri(tracking_uri), run_id, model, version)
     result = check_gates(metrics, expressions)
 
     typer.echo(f"Gating {source}")

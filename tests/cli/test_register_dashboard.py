@@ -82,6 +82,25 @@ def test_register_rejects_malformed_tag(tmp_path) -> None:
     assert "key=value" in result.output
 
 
+def test_edit_renames_and_updates_description(tmp_path) -> None:
+    env = _env(tmp_path)
+    runner.invoke(app, ["register", "old", "--tracking-uri", "sqlite:///a.db"], env=env)
+
+    result = runner.invoke(
+        app, ["edit", "old", "--name", "new", "--description", "fresh"], env=env
+    )
+    assert result.exit_code == 0, result.output
+    info = get_project("new", registry_path=tmp_path / "projects.json")
+    assert info.description == "fresh"
+
+    missing = runner.invoke(app, ["edit", "old", "--name", "whatever"], env=env)
+    assert missing.exit_code == 1
+
+    no_change = runner.invoke(app, ["edit", "new"], env=env)
+    assert no_change.exit_code != 0
+    assert "--name and/or --description" in no_change.output
+
+
 def test_unregister_confirms_then_removes_project(tmp_path) -> None:
     env = _env(tmp_path)
     runner.invoke(app, ["register", "gone", "--tracking-uri", "sqlite:///a.db"], env=env)

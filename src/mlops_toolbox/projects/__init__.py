@@ -6,7 +6,13 @@ from mlops_toolbox.core.exceptions import ProjectAlreadyRegisteredError, Project
 from mlops_toolbox.core.models import ProjectInfo
 from mlops_toolbox.projects.store import read_projects, resolve_registry_path, write_projects
 
-__all__ = ["register_project", "list_projects", "get_project", "unregister_project"]
+__all__ = [
+    "register_project",
+    "list_projects",
+    "get_project",
+    "update_project",
+    "unregister_project",
+]
 
 _SQLITE_PREFIX = "sqlite:///"
 
@@ -62,6 +68,33 @@ def get_project(name: str, *, registry_path: Path | str | None = None) -> Projec
     if name not in projects:
         raise ProjectNotFoundError(name)
     return projects[name]
+
+
+def update_project(
+    name: str,
+    *,
+    new_name: str | None = None,
+    description: str | None = None,
+    registry_path: Path | str | None = None,
+) -> ProjectInfo:
+    """Rename a project and/or replace its description; other fields are kept."""
+    path = resolve_registry_path(registry_path)
+    projects = read_projects(path)
+    if name not in projects:
+        raise ProjectNotFoundError(name)
+    if new_name and new_name != name and new_name in projects:
+        raise ProjectAlreadyRegisteredError(new_name)
+
+    info = projects.pop(name)
+    updated = info.model_copy(
+        update={
+            "name": new_name or info.name,
+            "description": description if description is not None else info.description,
+        }
+    )
+    projects[updated.name] = updated
+    write_projects(path, projects)
+    return updated
 
 
 def unregister_project(name: str, *, registry_path: Path | str | None = None) -> None:

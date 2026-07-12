@@ -99,7 +99,9 @@ import pandas as pd
 
 import mlops_toolbox as mt
 
-TRACKING_URI = "sqlite:///mlops.db"
+# Resolved from mlops.toml / MT_TRACKING_URI, falling back to the local default —
+# point the whole project at a shared MLflow server by editing mlops.toml only.
+TRACKING_URI = mt.load_settings().tracking_uri
 MODEL_NAME = "{{project}}"
 
 
@@ -174,9 +176,41 @@ jobs:
         run: python train.py
       - name: Quality gate
         # TODO: tighten the thresholds for your model.
-        run: mt gate "accuracy>=0.8" --model {{project}} --tracking-uri sqlite:///mlops.db
+        # The tracking URI resolves from mlops.toml (checked in with the project).
+        run: mt gate "accuracy>=0.8" --model {{project}}
       - name: Lifecycle audit
-        run: mt doctor --tracking-uri sqlite:///mlops.db
+        run: mt doctor
+"""
+
+INIT_MLOPS_TOML = """\
+# mlops-toolbox settings for {{project}}.
+# Resolution order: CLI flags > MT_* environment variables > this file > defaults.
+# Check this file in. Never put secrets here — cloud credentials come from your
+# provider's default chain, API keys from environment variables.
+
+tracking_uri = "sqlite:///mlops.db"
+
+# Team-shared setup: point at a remote MLflow server instead, e.g.
+# tracking_uri = "https://mlflow.internal.example.com"
+# registry_uri = "https://mlflow.internal.example.com"   # only if different from tracking
+
+# [aws]
+# region = "eu-west-1"
+# execution_role_arn = "arn:aws:iam::123456789012:role/sagemaker-execution"
+# artifact_bucket = "my-ml-artifacts"
+# ecr_repository = "my-models"
+
+# [gcp]
+# project = "my-gcp-project"
+# region = "europe-west1"
+# staging_bucket = "my-ml-staging"
+# artifact_registry_repo = "my-models"
+
+# [azure]
+# subscription_id = "00000000-0000-0000-0000-000000000000"
+# resource_group = "ml-rg"
+# workspace_name = "ml-workspace"
+# acr_name = "mymodelsacr"
 """
 
 INIT_REQUIREMENTS = """\

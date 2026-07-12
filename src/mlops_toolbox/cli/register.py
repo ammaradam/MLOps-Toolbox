@@ -5,10 +5,10 @@ from typing import Annotated
 import typer
 
 from mlops_toolbox.cli._options import (
-    DEFAULT_TRACKING_URI,
     AssumeYes,
     TrackingUri,
     confirm_or_abort,
+    resolve_tracking_uri,
 )
 
 
@@ -24,7 +24,7 @@ def _parse_tags(raw_tags: list[str]) -> dict[str, str]:
 
 def register(
     name: Annotated[str, typer.Argument(help="Project name.")],
-    tracking_uri: TrackingUri = DEFAULT_TRACKING_URI,
+    tracking_uri: TrackingUri = None,
     description: Annotated[
         str | None, typer.Option("--description", help="Short project description.")
     ] = None,
@@ -60,7 +60,7 @@ def register(
     try:
         info = register_project(
             name,
-            tracking_uri,
+            resolve_tracking_uri(tracking_uri),
             description=description,
             tags=_parse_tags(tag or []),
             overwrite=overwrite,
@@ -70,6 +70,30 @@ def register(
         raise typer.Exit(code=1) from exc
     typer.echo(f"Registered project '{info.name}' -> {info.tracking_uri}")
     typer.echo(f"Next:  mt doctor {info.name}   or   mt dashboard")
+
+
+def edit(
+    name: Annotated[str, typer.Argument(help="Project name.")],
+    new_name: Annotated[
+        str | None, typer.Option("--name", help="New project name.")
+    ] = None,
+    description: Annotated[
+        str | None, typer.Option("--description", help="New project description.")
+    ] = None,
+) -> None:
+    """Rename a project and/or replace its description."""
+    from mlops_toolbox.core.exceptions import ProjectError
+    from mlops_toolbox.projects import update_project
+
+    if new_name is None and description is None:
+        raise typer.BadParameter("Pass --name and/or --description.")
+    try:
+        info = update_project(name, new_name=new_name, description=description)
+    except ProjectError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    described = f" — {info.description}" if info.description else ""
+    typer.echo(f"Updated project: {info.name}{described}")
 
 
 def unregister(

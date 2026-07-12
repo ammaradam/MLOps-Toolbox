@@ -14,11 +14,22 @@ to build each stage:
 | Factory | Returns | Purpose |
 |---|---|---|
 | `mt.tracker(tracking_uri, experiment_name)` | `ExperimentTracker` | log params/metrics/artifacts per run; usable as a context manager |
-| `mt.model_registry(tracking_uri)` | `ModelRegistry` | register, load, alias, export models and their contracts |
+| `mt.model_registry(tracking_uri, registry_uri)` | `ModelRegistry` | register, load, alias, export models and their contracts |
 | `mt.drift_detector()` | `DriftDetector` | compare two dataframes for drift |
 | `mt.model_server()` | `ModelServer` | build and serve an HTTP app for a model |
 
-`mt.DEFAULT_TRACKING_URI` is `"sqlite:///mlops.db"`.
+Omitted URIs resolve through settings — `MT_TRACKING_URI` env var, the
+nearest `mlops.toml`, then `mt.DEFAULT_TRACKING_URI`
+(`"sqlite:///mlops.db"`).
+
+## Settings
+
+- `mt.load_settings()` → `ToolboxSettings` — resolved configuration
+  (tracking/registry URIs, serve defaults, `[aws]`/`[gcp]`/`[azure]`
+  sections). Precedence: kwargs > `MT_*` env vars > `mlops.toml` > defaults.
+- `mt.find_config_file()` → `Path | None` — the `mlops.toml` in effect,
+  searched upward from the working directory.
+- Inspect from the CLI with `mt config`.
 
 ## Data
 

@@ -10,6 +10,7 @@ runner = CliRunner()
 
 _EXPECTED = [
     "train.py",
+    "mlops.toml",
     "requirements.txt",
     "README.md",
     ".gitignore",

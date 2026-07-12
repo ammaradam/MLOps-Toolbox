@@ -7,7 +7,6 @@ import typer
 
 from mlops_toolbox.cli import templates
 from mlops_toolbox.cli._options import (
-    DEFAULT_TRACKING_URI,
     AssumeYes,
     ModelVersion,
     TrackingUri,
@@ -18,7 +17,7 @@ from mlops_toolbox.cli._options import (
 def ship(
     name: Annotated[str, typer.Argument(help="Registered model name.")],
     version: ModelVersion = "latest",
-    tracking_uri: TrackingUri = DEFAULT_TRACKING_URI,
+    tracking_uri: TrackingUri = None,
     out: Annotated[
         Path | None, typer.Option("--out", help="Output directory (default: deploy/<name>).")
     ] = None,

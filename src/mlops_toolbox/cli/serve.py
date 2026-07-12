@@ -4,10 +4,10 @@ from typing import Annotated, Any
 
 import typer
 
-from mlops_toolbox.cli._options import DEFAULT_TRACKING_URI, ModelVersion, TrackingUri
+from mlops_toolbox.cli._options import ModelVersion, TrackingUri
 
 
-def build_serving_app(name: str, version: str, tracking_uri: str) -> tuple[Any, bool]:
+def build_serving_app(name: str, version: str, tracking_uri: str | None) -> tuple[Any, bool]:
     """Load a registered model + its contract and return (app, has_contract)."""
     from mlops_toolbox.factories import model_registry, model_server
 
@@ -21,7 +21,7 @@ def build_serving_app(name: str, version: str, tracking_uri: str) -> tuple[Any, 
 def serve(
     name: Annotated[str, typer.Argument(help="Registered model name.")],
     version: ModelVersion = "latest",
-    tracking_uri: TrackingUri = DEFAULT_TRACKING_URI,
+    tracking_uri: TrackingUri = None,
     host: Annotated[str, typer.Option(help="Bind host.")] = "127.0.0.1",
     port: Annotated[int, typer.Option(help="Bind port.")] = 8000,
 ) -> None:
