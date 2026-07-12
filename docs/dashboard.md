@@ -51,10 +51,15 @@ mt.run_dashboard()
 
 ## What you see
 
-- **Index** — every registered project with a health badge
-  (pass / warn / fail counts from the lifecycle audit).
+- **Index** — one compact row per project with everything important at a
+  glance: health badge, the lifecycle rail, model count and production
+  alias, latest run status, and the latest metrics.
 - **Project detail** — the full health checklist with fix-it hints, metric
-  stat tiles with sparklines across runs, the runs table, and registered
-  models with their aliases and tags.
+  stat tiles with sparklines across runs, the runs table, registered models
+  with their aliases and tags, and **project settings**: rename the project,
+  edit its description, or remove it from the dashboard (with a
+  confirmation — removing only deletes the registration, never the store).
 
-The dashboard never writes to a project's store — it only queries it.
+The dashboard never writes to a project's tracking store — it only queries
+it. The one thing it can change is the local project registry
+(`projects.json`), via the settings panel.

@@ -10,14 +10,23 @@ from pathlib import Path
 from typing import Any
 
 from mlops_toolbox._utils.optional_deps import import_optional_dependency
-from mlops_toolbox.core.exceptions import ProjectNotFoundError
+from mlops_toolbox.core.exceptions import (
+    ProjectAlreadyRegisteredError,
+    ProjectNotFoundError,
+)
 from mlops_toolbox.dashboard.data_access import (
+    RunSummary,
     build_metric_series,
     list_registered_models,
     list_runs,
 )
 from mlops_toolbox.dashboard.sparkline import render_sparkline
-from mlops_toolbox.projects import get_project, list_projects
+from mlops_toolbox.projects import (
+    get_project,
+    list_projects,
+    unregister_project,
+    update_project,
+)
 from mlops_toolbox.projects.health import ProjectHealth, audit_project
 
 _TEMPLATES_DIR = Path(__file__).parent / "templates"
@@ -29,6 +38,7 @@ def create_app(registry_path: Path | str | None = None) -> Any:
     import_optional_dependency("jinja2", extra="dashboard")  # used implicitly by Jinja2Templates
     staticfiles = import_optional_dependency("fastapi.staticfiles", extra="dashboard")
     templating = import_optional_dependency("fastapi.templating", extra="dashboard")
+    responses = import_optional_dependency("fastapi.responses", extra="dashboard")
 
     app = fastapi_module.FastAPI(title="mlops-toolbox dashboard")
     app.state.registry_path = registry_path
@@ -44,14 +54,53 @@ def create_app(registry_path: Path | str | None = None) -> Any:
     @app.get("/", name="index")  # type: ignore[untyped-decorator]
     def index(request: Request) -> Any:  # type: ignore[valid-type]
         projects = list_projects(registry_path=app.state.registry_path)
-        health_by_name: dict[str, ProjectHealth | None] = {}
+        summaries: dict[str, dict[str, Any]] = {}
         for project in projects:
+            summary: dict[str, Any] = {"health": None, "models": [], "latest_run": None}
             try:
-                health_by_name[project.name] = audit_project(project.tracking_uri)
+                summary["health"] = audit_project(project.tracking_uri)
+                summary["models"] = list_registered_models(project.tracking_uri)
+                runs: list[RunSummary] = list_runs(project.tracking_uri, max_results=1)
+                summary["latest_run"] = runs[0] if runs else None
             except Exception:
-                health_by_name[project.name] = None
+                pass
+            summaries[project.name] = summary
         return templates.TemplateResponse(
-            request, "index.html", {"projects": projects, "health_by_name": health_by_name}
+            request, "index.html", {"projects": projects, "summaries": summaries}
+        )
+
+    @app.post("/projects/{name}/edit", name="project_edit")  # type: ignore[untyped-decorator]
+    def project_edit(
+        request: Request,  # type: ignore[valid-type]
+        name: str,
+        new_name: str = fastapi_module.Form(""),
+        description: str = fastapi_module.Form(""),
+    ) -> Any:
+        try:
+            updated = update_project(
+                name,
+                new_name=new_name.strip() or None,
+                description=description.strip() or None,
+                registry_path=app.state.registry_path,
+            )
+        except ProjectNotFoundError as exc:
+            raise fastapi_module.HTTPException(status_code=404, detail=str(exc)) from exc
+        except ProjectAlreadyRegisteredError as exc:
+            raise fastapi_module.HTTPException(status_code=409, detail=str(exc)) from exc
+        return responses.RedirectResponse(
+            request.url_for("project_detail", name=updated.name),  # type: ignore[attr-defined]
+            status_code=303,
+        )
+
+    @app.post("/projects/{name}/delete", name="project_delete")  # type: ignore[untyped-decorator]
+    def project_delete(request: Request, name: str) -> Any:  # type: ignore[valid-type]
+        try:
+            unregister_project(name, registry_path=app.state.registry_path)
+        except ProjectNotFoundError as exc:
+            raise fastapi_module.HTTPException(status_code=404, detail=str(exc)) from exc
+        return responses.RedirectResponse(
+            request.url_for("index"),  # type: ignore[attr-defined]
+            status_code=303,
         )
 
     @app.get("/projects/{name}", name="project_detail")  # type: ignore[untyped-decorator]

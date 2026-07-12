@@ -142,4 +142,31 @@
       <p class="empty-inline">No models registered yet for this project.</p>
     {% endif %}
   </section>
+
+  <section class="panel">
+    <h2 class="panel-title">Project Settings</h2>
+    <form class="settings-form" method="post"
+          action="{{ request.url_for('project_edit', name=project.name) }}">
+      <label class="field">
+        <span class="field-label">Name</span>
+        <input class="field-input" name="new_name" value="{{ project.name }}" required>
+      </label>
+      <label class="field field-wide">
+        <span class="field-label">Description</span>
+        <input class="field-input" name="description" value="{{ project.description or '' }}"
+               placeholder="What this project predicts">
+      </label>
+      <button type="submit" class="btn">Save changes</button>
+    </form>
+    <div class="danger-row">
+      <div>
+        <div class="danger-title">Remove this project from the dashboard</div>
+        <div class="danger-note">Only the registration is removed — the tracking store, runs, and models are untouched.</div>
+      </div>
+      <form method="post" action="{{ request.url_for('project_delete', name=project.name) }}"
+            onsubmit="return confirm('Remove {{ project.name }} from the dashboard?\n\nOnly the registration is removed — the tracking store, runs, and models are untouched.');">
+        <button type="submit" class="btn btn-danger">Remove project</button>
+      </form>
+    </div>
+  </section>
 {% endblock %}

@@ -86,6 +86,52 @@ def test_unknown_project_returns_404(tmp_path, dummy_model) -> None:
     assert response.status_code == 404
 
 
+def test_project_edit_route_renames_project(tmp_path, dummy_model) -> None:
+    registry_path, _ = _seed_project(tmp_path, dummy_model)
+    app = create_app(registry_path=registry_path)
+    client = TestClient(app)
+
+    response = client.post(
+        "/projects/seed-project/edit",
+        data={"new_name": "renamed-project", "description": "now with description"},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert "/projects/renamed-project" in response.headers["location"]
+
+    detail = client.get("/projects/renamed-project")
+    assert detail.status_code == 200
+    assert "now with description" in detail.text
+    assert client.get("/projects/seed-project").status_code == 404
+
+
+def test_project_edit_rejects_name_collision(tmp_path, dummy_model) -> None:
+    registry_path, _ = _seed_project(tmp_path, dummy_model)
+    register_project("other", "sqlite:///other.db", registry_path=registry_path)
+    app = create_app(registry_path=registry_path)
+    client = TestClient(app)
+
+    response = client.post(
+        "/projects/seed-project/edit",
+        data={"new_name": "other", "description": ""},
+        follow_redirects=False,
+    )
+    assert response.status_code == 409
+
+
+def test_project_delete_route_unregisters(tmp_path, dummy_model) -> None:
+    registry_path, _ = _seed_project(tmp_path, dummy_model)
+    app = create_app(registry_path=registry_path)
+    client = TestClient(app)
+
+    response = client.post("/projects/seed-project/delete", follow_redirects=False)
+    assert response.status_code == 303
+
+    index = client.get("/")
+    assert "seed-project" not in index.text
+    assert client.post("/projects/seed-project/delete", follow_redirects=False).status_code == 404
+
+
 def test_index_empty_state(tmp_path) -> None:
     registry_path = tmp_path / "empty-projects.json"
     app = create_app(registry_path=registry_path)

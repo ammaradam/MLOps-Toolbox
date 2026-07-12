@@ -7,45 +7,85 @@
   </div>
 
   {% if projects %}
-    <div class="project-grid">
+    <div class="project-list">
       {% for project in projects %}
-        {% set health = health_by_name.get(project.name) %}
-        <a class="project-card" href="{{ request.url_for('project_detail', name=project.name) }}">
-          <div class="card-top">
-            <h2 class="card-name">{{ project.name }}</h2>
-            {% if health %}
-              {% if health.n_fail %}
-                <span class="pill pill-fail">{{ health.n_fail }} fail</span>
-              {% elif health.n_warn %}
-                <span class="pill pill-warn">{{ health.n_warn }} warn</span>
+        {% set summary = summaries.get(project.name, {}) %}
+        {% set health = summary.get("health") %}
+        {% set models = summary.get("models", []) %}
+        {% set latest_run = summary.get("latest_run") %}
+        <a class="project-row" href="{{ request.url_for('project_detail', name=project.name) }}">
+          <div class="row-main">
+            <div class="row-name">
+              {{ project.name }}
+              {% if health %}
+                {% if health.n_fail %}
+                  <span class="pill pill-fail">{{ health.n_fail }} fail</span>
+                {% elif health.n_warn %}
+                  <span class="pill pill-warn">{{ health.n_warn }} warn</span>
+                {% else %}
+                  <span class="pill pill-pass">ready</span>
+                {% endif %}
               {% else %}
-                <span class="pill pill-pass">ready</span>
+                <span class="pill">unknown</span>
               {% endif %}
+            </div>
+            <div class="row-sub" title="{{ project.tracking_uri }}">
+              {{ project.description or project.tracking_uri }}
+            </div>
+          </div>
+
+          <div class="row-col">
+            <div class="col-label">lifecycle</div>
+            {% if health %}
+              <div class="health-rail" role="img"
+                   aria-label="Lifecycle: {{ health.n_pass }} pass, {{ health.n_warn }} warn, {{ health.n_fail }} fail">
+                {% for check in health.checks %}
+                  <span class="rail-seg rail-{{ check.status }}"
+                        title="{{ check.name }} — {{ check.status }}"></span>
+                {% endfor %}
+              </div>
+              <div class="rail-caption">{{ health.n_pass }}/{{ health.checks | length }} pass</div>
             {% else %}
-              <span class="pill">unknown</span>
+              <span class="empty-inline">—</span>
             {% endif %}
           </div>
 
-          {% if health %}
-            <div class="health-rail" role="img"
-                 aria-label="Lifecycle: {{ health.n_pass }} pass, {{ health.n_warn }} warn, {{ health.n_fail }} fail">
-              {% for check in health.checks %}
-                <span class="rail-seg rail-{{ check.status }}"
-                      title="{{ check.name }} — {{ check.status }}"></span>
-              {% endfor %}
-            </div>
-            <div class="rail-caption">{{ health.n_pass }}/{{ health.checks | length }} lifecycle checks pass</div>
-          {% endif %}
+          <div class="row-col">
+            <div class="col-label">models</div>
+            {% if models %}
+              <div class="col-value">{{ models | length }}</div>
+              <div class="col-detail">
+                {% for model in models[:1] %}
+                  {{ model.name }} v{{ model.version }}
+                  {%- if model.aliases %} · {{ model.aliases | join(", ") }}{% endif %}
+                {% endfor %}
+              </div>
+            {% else %}
+              <span class="empty-inline">none</span>
+            {% endif %}
+          </div>
 
-          {% if project.description %}
-            <p class="card-desc">{{ project.description }}</p>
-          {% endif %}
-          <code class="card-uri">{{ project.tracking_uri }}</code>
-          <div class="card-meta">
-            {% for key, value in project.tags.items() %}
-              <span class="tag-pill">{{ key }}={{ value }}</span>
-            {% endfor %}
-            <span class="card-date">registered {{ project.registered_at.strftime("%Y-%m-%d") }}</span>
+          <div class="row-col">
+            <div class="col-label">latest run</div>
+            {% if latest_run %}
+              <span class="pill status-{{ latest_run.status | lower }}">{{ latest_run.status }}</span>
+              <div class="col-detail">
+                {{ latest_run.start_time.strftime("%Y-%m-%d %H:%M") if latest_run.start_time else "" }}
+              </div>
+            {% else %}
+              <span class="empty-inline">none</span>
+            {% endif %}
+          </div>
+
+          <div class="row-col row-metrics">
+            <div class="col-label">latest metrics</div>
+            {% if latest_run and latest_run.metrics %}
+              {% for key, value in (latest_run.metrics.items() | list)[:4] %}
+                <span class="metric-chip">{{ key }} <b>{{ "%.3g" | format(value) }}</b></span>
+              {% endfor %}
+            {% else %}
+              <span class="empty-inline">—</span>
+            {% endif %}
           </div>
         </a>
       {% endfor %}
