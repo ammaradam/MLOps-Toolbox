@@ -46,7 +46,7 @@ def test_projects_lists_registered_projects(tmp_path) -> None:
     result = runner.invoke(app, ["projects"], env=env)
     assert result.exit_code == 0, result.output
     assert "proj-a" in result.output
-    assert "sqlite:///a.db" in result.output
+    assert "a.db" in result.output  # URI is normalized to an absolute path
     assert "first" in result.output
     assert "[team=x]" in result.output
 

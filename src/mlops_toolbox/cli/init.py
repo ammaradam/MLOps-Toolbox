@@ -6,6 +6,7 @@ from typing import Annotated
 import typer
 
 from mlops_toolbox.cli import templates
+from mlops_toolbox.cli._options import AssumeYes, confirm_or_abort
 
 
 def init(
@@ -16,12 +17,19 @@ def init(
     force: Annotated[
         bool, typer.Option("--force", help="Scaffold into a non-empty directory.")
     ] = False,
+    yes: AssumeYes = False,
 ) -> None:
     """Scaffold an ML project: contract-registered training plus a CI quality-gate workflow."""
     target = directory if directory is not None else Path(name)
-    if target.exists() and any(target.iterdir()) and not force:
-        typer.echo(f"Directory '{target}' is not empty; pass --force to scaffold anyway.", err=True)
-        raise typer.Exit(code=1)
+    if target.exists() and any(target.iterdir()):
+        if not force:
+            typer.echo(
+                f"Directory '{target}' is not empty; pass --force to scaffold anyway.", err=True
+            )
+            raise typer.Exit(code=1)
+        confirm_or_abort(
+            f"Scaffold into non-empty directory '{target}' (may overwrite files)?", yes
+        )
 
     files = {
         "train.py": templates.INIT_TRAIN_PY,

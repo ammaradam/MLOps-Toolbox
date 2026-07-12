@@ -1,49 +1,60 @@
 {% extends "base.html" %}
 {% block title %}Projects · mlops-toolbox dashboard{% endblock %}
 {% block content %}
-  <h1>Projects</h1>
+  <div class="page-head">
+    <h1>Projects</h1>
+    <p class="page-sub">Every registered project, audited against the lifecycle checklist.</p>
+  </div>
+
   {% if projects %}
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Health</th>
-          <th>Tracking URI</th>
-          <th>Description</th>
-          <th>Tags</th>
-          <th>Registered</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for project in projects %}
-          <tr>
-            <td><a href="{{ request.url_for('project_detail', name=project.name) }}">{{ project.name }}</a></td>
-            <td>
-              {% set health = health_by_name.get(project.name) %}
-              {% if health %}
-                <span class="status-pill health-{{ 'fail' if health.n_fail else ('warn' if health.n_warn else 'pass') }}">
-                  {{ health.n_pass }} pass{% if health.n_warn %} · {{ health.n_warn }} warn{% endif %}{% if health.n_fail %} · {{ health.n_fail }} fail{% endif %}
-                </span>
+    <div class="project-grid">
+      {% for project in projects %}
+        {% set health = health_by_name.get(project.name) %}
+        <a class="project-card" href="{{ request.url_for('project_detail', name=project.name) }}">
+          <div class="card-top">
+            <h2 class="card-name">{{ project.name }}</h2>
+            {% if health %}
+              {% if health.n_fail %}
+                <span class="pill pill-fail">{{ health.n_fail }} fail</span>
+              {% elif health.n_warn %}
+                <span class="pill pill-warn">{{ health.n_warn }} warn</span>
               {% else %}
-                <span class="status-pill">unknown</span>
+                <span class="pill pill-pass">ready</span>
               {% endif %}
-            </td>
-            <td><code>{{ project.tracking_uri }}</code></td>
-            <td>{{ project.description or "" }}</td>
-            <td>
-              {% for key, value in project.tags.items() %}
-                <span class="tag-pill">{{ key }}={{ value }}</span>
+            {% else %}
+              <span class="pill">unknown</span>
+            {% endif %}
+          </div>
+
+          {% if health %}
+            <div class="health-rail" role="img"
+                 aria-label="Lifecycle: {{ health.n_pass }} pass, {{ health.n_warn }} warn, {{ health.n_fail }} fail">
+              {% for check in health.checks %}
+                <span class="rail-seg rail-{{ check.status }}"
+                      title="{{ check.name }} — {{ check.status }}"></span>
               {% endfor %}
-            </td>
-            <td>{{ project.registered_at.strftime("%Y-%m-%d %H:%M") }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+            </div>
+            <div class="rail-caption">{{ health.n_pass }}/{{ health.checks | length }} lifecycle checks pass</div>
+          {% endif %}
+
+          {% if project.description %}
+            <p class="card-desc">{{ project.description }}</p>
+          {% endif %}
+          <code class="card-uri">{{ project.tracking_uri }}</code>
+          <div class="card-meta">
+            {% for key, value in project.tags.items() %}
+              <span class="tag-pill">{{ key }}={{ value }}</span>
+            {% endfor %}
+            <span class="card-date">registered {{ project.registered_at.strftime("%Y-%m-%d") }}</span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
   {% else %}
-    <p class="empty-state">
-      No projects registered yet. Register one from Python:<br>
-      <code>import mlops_toolbox as mt; mt.register_project("my-project", "sqlite:///mlops.db")</code>
-    </p>
+    <div class="empty-state">
+      <p><strong>No projects registered yet.</strong></p>
+      <p>Register one from the shell — the dashboard picks it up on refresh:</p>
+      <code>mt register my-model --tracking-uri sqlite:///path/to/mlops.db</code>
+    </div>
   {% endif %}
 {% endblock %}

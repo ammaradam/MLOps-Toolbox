@@ -8,7 +8,9 @@
 </head>
 <body>
   <header class="app-header">
-    <a href="{{ request.url_for('index') }}">mlops-toolbox dashboard</a>
+    <a class="wordmark" href="{{ request.url_for('index') }}">mlops<span class="wordmark-accent">-toolbox</span></a>
+    <span class="app-context">dashboard</span>
+    <span class="app-note">local · read-only</span>
   </header>
   <main>
     {% block content %}{% endblock %}

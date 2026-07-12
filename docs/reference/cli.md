@@ -35,8 +35,11 @@ Export a self-contained deployable folder: model artifacts, `serve.py`,
 runtime.
 
 ```bash
-mt ship my-model [--out deploy/my-model] [--force]
+mt ship my-model [--out deploy/my-model] [--force] [--yes]
 ```
+
+`--force` (overwriting a non-empty directory) asks for confirmation;
+`--yes`/`-y` skips the prompt. The same applies to `mt init --force`.
 
 ## `mt score NAME`
 
@@ -97,6 +100,34 @@ coverage.
 mt models [--tracking-uri URI]
 ```
 
+## `mt register NAME` / `mt unregister NAME`
+
+Manage project registrations (name → tracking URI) used by the dashboard,
+`mt doctor`, and `mt models`.
+
+```bash
+mt register churn --tracking-uri sqlite:///mlops.db \
+  --description "Customer churn" --tag team=growth [--overwrite] [--yes]
+mt unregister churn [--yes]
+```
+
+Relative sqlite paths are **resolved to absolute at registration time** —
+otherwise the URI would point at a different (auto-created, empty) store
+depending on where later commands run. Overwriting a registration and
+unregistering both ask for confirmation; pass `--yes`/`-y` to skip in
+scripts.
+
+Registrations live in `~/.mlops-toolbox/projects.json` (override with
+`MLOPS_TOOLBOX_HOME`); unregistering never touches the tracking store itself.
+
 ## `mt projects`
 
 List locally registered projects (name, tracking URI, description, tags).
+
+## `mt dashboard`
+
+Run the read-only multi-project dashboard over every registered project.
+
+```bash
+mt dashboard [--host 127.0.0.1] [--port 8050]
+```

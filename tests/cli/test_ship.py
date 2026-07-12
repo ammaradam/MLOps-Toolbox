@@ -30,6 +30,8 @@ def test_ship_creates_self_contained_folder(registered_model_store, tmp_path) ->
         assert (out / file_name).exists()
     requirements = (out / "requirements.txt").read_text(encoding="utf-8")
     assert "mlops-toolbox[deploy,registry]" in requirements
+    dockerfile = (out / "Dockerfile").read_text(encoding="utf-8")
+    assert "uv pip install --system" in dockerfile
 
 
 def test_ship_refuses_non_empty_out_without_force(registered_model_store, tmp_path) -> None:
@@ -41,7 +43,8 @@ def test_ship_refuses_non_empty_out_without_force(registered_model_store, tmp_pa
     result = _ship(uri, name, out)
     assert result.exit_code == 1
 
-    forced = _ship(uri, name, out, "--force")
+    # --force prompts for confirmation; --yes skips it (scripts/CI).
+    forced = _ship(uri, name, out, "--force", "--yes")
     assert forced.exit_code == 0, forced.output
 
 

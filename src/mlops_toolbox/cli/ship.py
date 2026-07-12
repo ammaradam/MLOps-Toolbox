@@ -6,7 +6,13 @@ from typing import Annotated
 import typer
 
 from mlops_toolbox.cli import templates
-from mlops_toolbox.cli._options import DEFAULT_TRACKING_URI, ModelVersion, TrackingUri
+from mlops_toolbox.cli._options import (
+    DEFAULT_TRACKING_URI,
+    AssumeYes,
+    ModelVersion,
+    TrackingUri,
+    confirm_or_abort,
+)
 
 
 def ship(
@@ -19,6 +25,7 @@ def ship(
     force: Annotated[
         bool, typer.Option("--force", help="Overwrite a non-empty output directory.")
     ] = False,
+    yes: AssumeYes = False,
 ) -> None:
     """Export a registered model as a self-contained, deployable service folder.
 
@@ -29,11 +36,13 @@ def ship(
     from mlops_toolbox.factories import model_registry
 
     out_dir = out if out is not None else Path("deploy") / name
-    if out_dir.exists() and any(out_dir.iterdir()) and not force:
-        typer.echo(
-            f"Output directory '{out_dir}' is not empty; pass --force to overwrite.", err=True
-        )
-        raise typer.Exit(code=1)
+    if out_dir.exists() and any(out_dir.iterdir()):
+        if not force:
+            typer.echo(
+                f"Output directory '{out_dir}' is not empty; pass --force to overwrite.", err=True
+            )
+            raise typer.Exit(code=1)
+        confirm_or_abort(f"Overwrite contents of '{out_dir}'?", yes)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     registry = model_registry(tracking_uri)
@@ -54,4 +63,7 @@ def ship(
         "with contract" if contract is not None else "without contract (untyped /predict)"
     )
     typer.echo(f"Shipped '{name}' v{info.version} to {out_dir} ({contract_note}).")
-    typer.echo(f"Try it:  cd {out_dir} && uvicorn serve:app --port 8000")
+    typer.echo(
+        f"Try it:  cd {out_dir} && "
+        "uv run --with-requirements requirements.txt uvicorn serve:app --port 8000"
+    )

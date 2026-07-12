@@ -2,18 +2,20 @@
 
 ## Install
 
-Requires Python 3.11+. Extras are named after lifecycle stages:
+Requires Python 3.11+. With [uv](https://docs.astral.sh/uv/) (recommended):
 
 ```bash
-pip install "mlops-toolbox[all]"        # everything
+uv add "mlops-toolbox[all]"        # everything
 # or pick stages:
-pip install "mlops-toolbox[tracking]"   # experiment tracking
-pip install "mlops-toolbox[registry]"   # model registry (includes tracking)
-pip install "mlops-toolbox[monitoring]" # drift detection
-pip install "mlops-toolbox[deploy]"     # model serving
-pip install "mlops-toolbox[dashboard]"  # multi-project dashboard
-pip install "mlops-toolbox[cli]"        # the `mt` command line
+uv add "mlops-toolbox[tracking]"   # experiment tracking
+uv add "mlops-toolbox[registry]"   # model registry (includes tracking)
+uv add "mlops-toolbox[monitoring]" # drift detection
+uv add "mlops-toolbox[deploy]"     # model serving
+uv add "mlops-toolbox[dashboard]"  # multi-project dashboard
+uv add "mlops-toolbox[cli]"        # the `mt` command line
 ```
+
+Prefer pip? `pip install "mlops-toolbox[...]"` works identically.
 
 The base install is deliberately light (pydantic, numpy, pandas). Heavy
 backends load lazily, and a missing extra raises an error naming exactly
@@ -22,11 +24,14 @@ what to install.
 ## The fastest path: `mt init`
 
 ```bash
-pip install "mlops-toolbox[all]" scikit-learn
-mt init my-model
-cd my-model
-python train.py
+uv init my-model && cd my-model
+uv add "mlops-toolbox[all]" scikit-learn
+uv run mt init my-model --dir . --force
+uv run python train.py
 ```
+
+(In an activated virtualenv or pip install, drop the `uv run` prefix — `mt`
+is on your PATH.)
 
 The scaffold gives you a working `train.py` (swap in your data and model at
 the two `TODO`s), a CI workflow that gates on model quality, and a README.

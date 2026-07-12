@@ -4,6 +4,9 @@ mlflow.db
 mlruns/
 mlartifacts/
 
+# Local end-to-end test project (scaffolded with `mt init`), never committed
+demo/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

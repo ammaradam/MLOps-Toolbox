@@ -54,46 +54,54 @@ codebase is strictly typed (`mypy --strict`, pydantic everywhere).
 
 ## Installation
 
-Requires Python 3.11+. Pick the extras for the stages you need — the base
-install stays deliberately light, and heavy backends load lazily.
+Requires Python 3.11+. With [uv](https://docs.astral.sh/uv/) (recommended):
 
 ```bash
-pip install mlops-toolbox               # core only: pydantic, numpy, pandas
-pip install "mlops-toolbox[tracking]"   # + experiment tracking
-pip install "mlops-toolbox[registry]"   # + model registry (includes tracking)
-pip install "mlops-toolbox[monitoring]" # + drift detection
-pip install "mlops-toolbox[deploy]"     # + model serving
-pip install "mlops-toolbox[dashboard]"  # + multi-project web dashboard
-pip install "mlops-toolbox[cli]"        # + the `mt` command line
-pip install "mlops-toolbox[all]"        # everything
+uv add mlops-toolbox               # core only: pydantic, numpy, pandas
+uv add "mlops-toolbox[tracking]"   # + experiment tracking
+uv add "mlops-toolbox[registry]"   # + model registry (includes tracking)
+uv add "mlops-toolbox[monitoring]" # + drift detection
+uv add "mlops-toolbox[deploy]"     # + model serving
+uv add "mlops-toolbox[dashboard]"  # + multi-project web dashboard
+uv add "mlops-toolbox[cli]"        # + the `mt` command line
+uv add "mlops-toolbox[all]"        # everything
 ```
 
-If an extra is missing, the toolbox tells you exactly which one to install.
+Prefer pip? `pip install "mlops-toolbox[...]"` works identically.
+
+Pick the extras for the stages you need — the base install stays
+deliberately light, heavy backends load lazily, and a missing extra raises
+an error naming exactly which one to install.
 
 ## Five-minute tour
 
 Start from nothing:
 
 ```bash
-pip install "mlops-toolbox[all]" scikit-learn
-mt init my-model            # scaffold: train.py + CI workflow + README
-cd my-model
-python train.py             # train, evaluate, register — with contract
+uv init my-model && cd my-model
+uv add "mlops-toolbox[all]" scikit-learn
+uv run mt init my-model --dir . --force   # scaffold: train.py + CI workflow + README
+uv run python train.py                    # train, evaluate, register — with contract
 ```
 
 Everything after that is one command each:
 
 ```bash
-mt doctor my-model                        # audit lifecycle completeness
-mt models                                 # list models: versions, aliases, contract coverage
-mt serve my-model --version production    # typed /predict + GET /contract
-mt score my-model --input new_data.csv    # batch scoring, contract-enforced
-mt drift my-model --input new_data.csv    # exit 1 if drift detected (cron/CI-able)
-mt gate "accuracy>=0.85" --model my-model # exit 1 if quality gate fails (CI)
-mt card my-model --out MODEL_CARD.md      # model card from the registry
-mt ship my-model                          # self-contained deployable folder
-mt projects                               # list all registered projects
+uv run mt doctor my-model                        # audit lifecycle completeness
+uv run mt models                                 # list models: versions, aliases, contracts
+uv run mt serve my-model --version production    # typed /predict + GET /contract
+uv run mt score my-model --input new_data.csv    # batch scoring, contract-enforced
+uv run mt drift my-model --input new_data.csv    # exit 1 if drift detected (cron/CI-able)
+uv run mt gate "accuracy>=0.85" --model my-model # exit 1 if quality gate fails (CI)
+uv run mt card my-model --out MODEL_CARD.md      # model card from the registry
+uv run mt ship my-model                          # self-contained deployable folder
+uv run mt register my-model --tag team=growth    # register project for dashboard/doctor
+uv run mt projects                               # list all registered projects
+uv run mt dashboard                              # multi-project dashboard at :8050
 ```
+
+(In an activated virtualenv or pip install, drop the `uv run` prefix — `mt`
+is on your PATH.)
 
 ## The Python API
 
@@ -165,12 +173,12 @@ URI — and browse them all in one local, read-only web dashboard: runs,
 registered models, metric sparklines, and per-project lifecycle health
 badges backed by the same checks as `mt doctor`.
 
-```python
-mt.register_project("my-model", "sqlite:///mlops.db", tags={"team": "growth"})
-mt.run_dashboard()  # http://127.0.0.1:8050
+```bash
+mt register my-model --tracking-uri sqlite:///mlops.db --tag team=growth
+mt dashboard   # http://127.0.0.1:8050
 ```
 
-Or: `python -m mlops_toolbox.dashboard [--host HOST] [--port PORT]`.
+Or from Python: `mt.register_project(...)` and `mt.run_dashboard()`.
 
 <div align="center">
 <img src="assets/dashboard-preview.svg" alt="Dashboard wireframe: project list on the left, a project detail page with a metric sparkline, runs table, and registered models table on the right" width="820">

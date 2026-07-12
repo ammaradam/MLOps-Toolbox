@@ -8,6 +8,13 @@ backed by the same checks as `mt doctor`.
 
 A project is just a name pointing at a tracking URI:
 
+```bash
+mt register churn-model --tracking-uri sqlite:///mlops.db \
+  --description "Customer churn prediction" --tag team=growth
+```
+
+or from Python:
+
 ```python
 import mlops_toolbox as mt
 
@@ -23,22 +30,23 @@ Registration is core-only (no extras needed) and stored in
 `~/.mlops-toolbox/projects.json` — override the location with the
 `MLOPS_TOOLBOX_HOME` environment variable or an explicit `registry_path=`.
 
-!!! tip "Use absolute tracking URIs"
-    A relative URI like `sqlite:///mlops.db` resolves against the *current
-    working directory* of whoever reads it. Register projects with absolute
-    paths so the dashboard and `mt doctor` find the same store you trained
-    against.
+!!! note "Relative paths are normalized"
+    A relative URI like `sqlite:///mlops.db` would resolve against the
+    *current working directory* of whoever reads it — so registration
+    resolves relative sqlite paths to absolute ones automatically. Register
+    from the directory you trained in (or pass an absolute path) and the
+    dashboard and `mt doctor` will find the right store from anywhere.
 
 ## Run it
 
-```python
-mt.run_dashboard()  # http://127.0.0.1:8050
+```bash
+mt dashboard [--host HOST] [--port PORT]   # http://127.0.0.1:8050
 ```
 
-or from the shell:
+or from Python:
 
-```bash
-python -m mlops_toolbox.dashboard [--host HOST] [--port PORT]
+```python
+mt.run_dashboard()
 ```
 
 ## What you see

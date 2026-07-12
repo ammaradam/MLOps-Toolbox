@@ -22,7 +22,9 @@ def test_register_list_get_round_trip(tmp_path) -> None:
     assert [p.name for p in projects] == ["churn-model"]
 
     info = get_project("churn-model", registry_path=registry_path)
-    assert info.tracking_uri == "sqlite:///churn.db"
+    # Relative sqlite paths are normalized to absolute at registration time.
+    assert info.tracking_uri.startswith("sqlite:///")
+    assert info.tracking_uri.endswith("/churn.db")
     assert info.description == "Churn prediction"
     assert info.tags == {"team": "growth"}
 
@@ -38,7 +40,7 @@ def test_register_duplicate_with_overwrite_replaces(tmp_path) -> None:
     registry_path = tmp_path / "projects.json"
     register_project("a", "sqlite:///a.db", registry_path=registry_path)
     register_project("a", "sqlite:///a2.db", overwrite=True, registry_path=registry_path)
-    assert get_project("a", registry_path=registry_path).tracking_uri == "sqlite:///a2.db"
+    assert get_project("a", registry_path=registry_path).tracking_uri.endswith("/a2.db")
 
 
 def test_get_and_unregister_unknown_raise(tmp_path) -> None:
@@ -74,4 +76,4 @@ def test_registry_file_shape(tmp_path) -> None:
     raw = json.loads(registry_path.read_text(encoding="utf-8"))
     assert raw["version"] == 1
     assert "a" in raw["projects"]
-    assert raw["projects"]["a"]["tracking_uri"] == "sqlite:///a.db"
+    assert raw["projects"]["a"]["tracking_uri"].endswith("/a.db")

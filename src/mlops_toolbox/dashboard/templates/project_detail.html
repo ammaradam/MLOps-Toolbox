@@ -1,127 +1,145 @@
 {% extends "base.html" %}
 {% block title %}{{ project.name }} · mlops-toolbox dashboard{% endblock %}
 {% block content %}
-  <h1>{{ project.name }}</h1>
-  <p class="project-meta">
-    <code>{{ project.tracking_uri }}</code>
-    {% if project.description %} &middot; {{ project.description }}{% endif %}
-    {% for key, value in project.tags.items() %}
-      <span class="tag-pill">{{ key }}={{ value }}</span>
-    {% endfor %}
-  </p>
+  <div class="page-head">
+    <div class="page-head-row">
+      <h1>{{ project.name }}</h1>
+      {% if health %}
+        {% if health.n_fail %}
+          <span class="pill pill-fail">{{ health.n_fail }} fail</span>
+        {% elif health.n_warn %}
+          <span class="pill pill-warn">{{ health.n_warn }} warn</span>
+        {% else %}
+          <span class="pill pill-pass">ready</span>
+        {% endif %}
+      {% endif %}
+    </div>
+    <p class="page-sub">
+      <code class="inline-uri">{{ project.tracking_uri }}</code>
+      {% if project.description %} · {{ project.description }}{% endif %}
+    </p>
+    {% if project.tags %}
+      <div class="page-tags">
+        {% for key, value in project.tags.items() %}
+          <span class="tag-pill">{{ key }}={{ value }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  {% if health %}
+    <section class="panel">
+      <h2 class="panel-title">Lifecycle Health</h2>
+      <ol class="health-list">
+        {% for check in health.checks %}
+          <li class="health-item is-{{ check.status }}">
+            <span class="health-marker" aria-hidden="true"></span>
+            <div class="health-body">
+              <div class="health-name">{{ check.name }}</div>
+              <div class="health-detail">{{ check.detail }}</div>
+              {% if check.hint and check.status != "pass" %}
+                <div class="health-hint">{{ check.hint }}</div>
+              {% endif %}
+            </div>
+            <span class="health-status">{{ check.status }}</span>
+          </li>
+        {% endfor %}
+      </ol>
+    </section>
+  {% endif %}
 
   {% if runs_error %}
     <div class="error-banner">Could not load runs: {{ runs_error }}</div>
   {% elif stat_tiles %}
-    <div class="stat-tiles">
-      {% for tile in stat_tiles %}
-        <div class="stat-tile">
-          <div class="stat-name">{{ tile.name }}</div>
-          <div class="stat-value">{{ "%.4g"|format(tile.latest) }}</div>
-          {{ tile.svg | safe }}
-        </div>
-      {% endfor %}
-    </div>
+    <section class="panel">
+      <h2 class="panel-title">Metric Trends</h2>
+      <div class="stat-tiles">
+        {% for tile in stat_tiles %}
+          <div class="stat-tile">
+            <div class="stat-name">{{ tile.name }}</div>
+            <div class="stat-value">{{ "%.4g"|format(tile.latest) }}</div>
+            {{ tile.svg | safe }}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
   {% endif %}
 
-  {% if health %}
-    <h2>Lifecycle Health</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Check</th>
-          <th>Status</th>
-          <th>Detail</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for check in health.checks %}
+  <section class="panel">
+    <h2 class="panel-title">Runs</h2>
+    {% if runs_error %}
+      <div class="error-banner">Could not load runs: {{ runs_error }}</div>
+    {% elif runs %}
+      <table>
+        <thead>
           <tr>
-            <td>{{ check.name }}</td>
-            <td><span class="status-pill health-{{ check.status }}">{{ check.status }}</span></td>
-            <td>
-              {{ check.detail }}
-              {% if check.hint and check.status != "pass" %}
-                <div class="health-hint">{{ check.hint }}</div>
-              {% endif %}
-            </td>
+            <th>Run</th>
+            <th>Status</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Metrics</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% endif %}
+        </thead>
+        <tbody>
+          {% for run in runs %}
+            <tr>
+              <td class="cell-strong">{{ run.run_name or run.run_id[:8] }}</td>
+              <td>
+                <span class="pill status-{{ run.status|lower }}">{{ run.status }}</span>
+              </td>
+              <td class="cell-mono">{{ run.start_time.strftime("%Y-%m-%d %H:%M") if run.start_time else "" }}</td>
+              <td class="cell-mono">{{ run.end_time.strftime("%Y-%m-%d %H:%M") if run.end_time else "" }}</td>
+              <td>
+                {% for key, value in run.metrics.items() %}
+                  <span class="metric-chip">{{ key }} <b>{{ "%.4g"|format(value) }}</b></span>
+                {% endfor %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-inline">No runs logged yet for this project.</p>
+    {% endif %}
+  </section>
 
-  <h2>Runs</h2>
-  {% if runs_error %}
-    <div class="error-banner">Could not load runs: {{ runs_error }}</div>
-  {% elif runs %}
-    <table>
-      <thead>
-        <tr>
-          <th>Run</th>
-          <th>Status</th>
-          <th>Start</th>
-          <th>End</th>
-          <th>Metrics</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for run in runs %}
+  <section class="panel">
+    <h2 class="panel-title">Registered Models</h2>
+    {% if models_error %}
+      <div class="error-banner">Could not load registered models: {{ models_error }}</div>
+    {% elif models %}
+      <table>
+        <thead>
           <tr>
-            <td>{{ run.run_name or run.run_id[:8] }}</td>
-            <td>
-              <span class="status-pill status-{{ run.status|lower }}">{{ run.status }}</span>
-            </td>
-            <td>{{ run.start_time.strftime("%Y-%m-%d %H:%M") if run.start_time else "" }}</td>
-            <td>{{ run.end_time.strftime("%Y-%m-%d %H:%M") if run.end_time else "" }}</td>
-            <td>
-              {% for key, value in run.metrics.items() %}
-                <span class="tag-pill">{{ key }}={{ "%.4g"|format(value) }}</span>
-              {% endfor %}
-            </td>
+            <th>Name</th>
+            <th>Version</th>
+            <th>Aliases</th>
+            <th>Source Run</th>
+            <th>Tags</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p class="empty-state">No runs logged yet for this project.</p>
-  {% endif %}
-
-  <h2>Registered Models</h2>
-  {% if models_error %}
-    <div class="error-banner">Could not load registered models: {{ models_error }}</div>
-  {% elif models %}
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Version</th>
-          <th>Aliases</th>
-          <th>Source Run</th>
-          <th>Tags</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for model in models %}
-          <tr>
-            <td>{{ model.name }}</td>
-            <td>{{ model.version }}</td>
-            <td>
-              {% for alias in model.aliases %}
-                <span class="status-pill">{{ alias }}</span>
-              {% endfor %}
-            </td>
-            <td>{{ (model.source_run_id or "")[:8] }}</td>
-            <td>
-              {% for key, value in model.tags.items() %}
-                <span class="tag-pill">{{ key }}={{ value }}</span>
-              {% endfor %}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p class="empty-state">No models registered yet for this project.</p>
-  {% endif %}
+        </thead>
+        <tbody>
+          {% for model in models %}
+            <tr>
+              <td class="cell-strong">{{ model.name }}</td>
+              <td class="cell-mono">v{{ model.version }}</td>
+              <td>
+                {% for alias in model.aliases %}
+                  <span class="pill pill-alias">{{ alias }}</span>
+                {% endfor %}
+              </td>
+              <td class="cell-mono">{{ (model.source_run_id or "")[:8] }}</td>
+              <td>
+                {% for key, value in model.tags.items() if not key.startswith("mlops_toolbox.") %}
+                  <span class="tag-pill">{{ key }}={{ value }}</span>
+                {% endfor %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-inline">No models registered yet for this project.</p>
+    {% endif %}
+  </section>
 {% endblock %}

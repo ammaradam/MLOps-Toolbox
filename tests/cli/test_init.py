@@ -45,5 +45,11 @@ def test_init_refuses_non_empty_dir(tmp_path) -> None:
     assert result.exit_code == 1
     assert "not empty" in result.output
 
-    forced = runner.invoke(app, ["init", "existing", "--dir", str(target), "--force"])
+    declined = runner.invoke(
+        app, ["init", "existing", "--dir", str(target), "--force"], input="n\n"
+    )
+    assert declined.exit_code == 1
+    assert not (target / "train.py").exists()
+
+    forced = runner.invoke(app, ["init", "existing", "--dir", str(target), "--force", "--yes"])
     assert forced.exit_code == 0, forced.output

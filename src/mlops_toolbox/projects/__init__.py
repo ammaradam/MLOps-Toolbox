@@ -8,6 +8,23 @@ from mlops_toolbox.projects.store import read_projects, resolve_registry_path, w
 
 __all__ = ["register_project", "list_projects", "get_project", "unregister_project"]
 
+_SQLITE_PREFIX = "sqlite:///"
+
+
+def _normalize_tracking_uri(tracking_uri: str) -> str:
+    """Resolve relative sqlite paths to absolute ones at registration time.
+
+    A relative sqlite URI resolves against the CWD of whoever *reads* it (and
+    the backend silently creates an empty store when the file is missing), so
+    storing one in the project registry is almost never what the user means.
+    """
+    if not tracking_uri.startswith(_SQLITE_PREFIX):
+        return tracking_uri
+    path = Path(tracking_uri[len(_SQLITE_PREFIX) :])
+    if path.is_absolute():
+        return tracking_uri
+    return _SQLITE_PREFIX + (Path.cwd() / path).resolve().as_posix()
+
 
 def register_project(
     name: str,
@@ -24,7 +41,10 @@ def register_project(
         raise ProjectAlreadyRegisteredError(name)
 
     info = ProjectInfo(
-        name=name, tracking_uri=tracking_uri, description=description, tags=tags or {}
+        name=name,
+        tracking_uri=_normalize_tracking_uri(tracking_uri),
+        description=description,
+        tags=tags or {},
     )
     projects[name] = info
     write_projects(path, projects)

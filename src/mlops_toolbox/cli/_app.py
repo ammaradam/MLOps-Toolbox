@@ -3,11 +3,13 @@ from __future__ import annotations
 import typer
 
 from mlops_toolbox.cli.card import card
+from mlops_toolbox.cli.dashboard import dashboard
 from mlops_toolbox.cli.doctor import doctor
 from mlops_toolbox.cli.drift import drift
 from mlops_toolbox.cli.gate import gate
 from mlops_toolbox.cli.init import init
 from mlops_toolbox.cli.listing import models, projects
+from mlops_toolbox.cli.register import register, unregister
 from mlops_toolbox.cli.score import score
 from mlops_toolbox.cli.serve import serve
 from mlops_toolbox.cli.ship import ship
@@ -27,3 +29,6 @@ app.command()(card)
 app.command()(doctor)
 app.command()(models)
 app.command()(projects)
+app.command()(register)
+app.command()(unregister)
+app.command()(dashboard)
